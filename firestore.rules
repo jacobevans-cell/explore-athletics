@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function isAdmin() {
+      return verified()
+        && request.auth.token.email == "REPLACE_WITH_YOUR_ADMIN_GOOGLE_EMAIL";
+    }
+    function isOwner(uid) { return verified() && request.auth.uid == uid; }
+
+    // Public, non-sensitive catalog data.
+    match /seasons/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /teams/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    // Account directory. Users may create/read their own basic directory record.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && ((isAdmin() && request.resource.data.role == 'admin') || (!isAdmin() && request.resource.data.role == 'athlete'));
+      allow update: if isAdmin() || (isOwner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','lastLoginAt']));
+      allow delete: if isAdmin();
+    }
+
+    // One athlete profile per authenticated account.
+    match /athletes/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create, update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+
+      match /registrations/{registrationId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isAdmin() || (isOwner(uid)
+          && request.resource.data.status == 'submitted'
+          && request.resource.data.athleteUid == uid);
+        allow update: if isAdmin() || (isOwner(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes','updatedAt']));
+        allow delete: if isAdmin();
+      }
+
+      // Document metadata. File bytes are separately protected by Storage rules.
+      match /documents/{documentId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isAdmin() || (isOwner(uid)
+          && request.resource.data.reviewStatus == 'pending'
+          && request.resource.data.storagePath.matches('athlete-documents/' + uid + '/.*'));
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+      }
+
+      // Athlete may see their ledger; only admin may create/change money records.
+      match /payments/{paymentId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+    // Optional old interest data remains admin-only after migration.
+    match /season2SportsInterest/{id} { allow read, write: if isAdmin(); }
+    match /sportsRoster/{id} { allow read, write: if isAdmin(); }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
