@@ -7,7 +7,7 @@ This package is intentionally locked down. The administrator page is not linked 
 Choose the Google account you alone control for athletics administration.
 
 Replace this exact placeholder in THREE files:
-`REPLACE_WITH_YOUR_ADMIN_GOOGLE_EMAIL`
+`Jacobicusjax@gmail.com`
 
 Files:
 - `js/firebase-config.js`

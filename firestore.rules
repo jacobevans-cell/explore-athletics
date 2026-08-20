@@ -5,7 +5,7 @@ service cloud.firestore {
     function verified() { return signedIn() && request.auth.token.email_verified == true; }
     function isAdmin() {
       return verified()
-        && request.auth.token.email == "REPLACE_WITH_YOUR_ADMIN_GOOGLE_EMAIL";
+        && request.auth.token.email == "Jacobicusjax@gmail.com";
     }
     function isOwner(uid) { return verified() && request.auth.uid == uid; }
 
