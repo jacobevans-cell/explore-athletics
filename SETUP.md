@@ -84,3 +84,12 @@ This release TRACKS payments. It does not charge cards or collect money online. 
 
 ## Privacy recommendation
 Birth certificates, physicals, DOBs, emergency contacts, and minor athlete information are sensitive records. Keep administrator access limited, use a strong Google-account password with MFA, and follow school retention/deletion policy. Only collect records the school actually requires.
+
+
+### Storage document categories
+Uploads are restricted to these exact folders only:
+- `birth-certificate`
+- `physical`
+- `insurance`
+
+All other Storage paths are denied.
