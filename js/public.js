@@ -1,9 +1,9 @@
-import { seasons, teams } from "./seed-data.js";
-const teamGrid=document.getElementById("teamGrid");
-if(teamGrid){
-  teamGrid.innerHTML=teams.map(t=>`<article class="card team-card"><div class="sport">${icon(t.sport)}</div><div class="card-title"><div><h3>${t.name}</h3><p style="margin:4px 0">${t.grades} • ${t.gender}</p></div><span class="badge ${t.league==='IYAC'?'badge-green':t.league==='CAA'?'badge-blue':'badge-gold'}">${t.league}</span></div><p>${t.placement}</p></article>`).join("");
-}
-const seasonGrid=document.getElementById("seasonGrid");
-if(seasonGrid){seasonGrid.innerHTML=seasons.map(s=>`<div class="card"><span class="badge badge-gray">${s.status}</span><h3 style="color:var(--navy);margin:10px 0 4px">${s.name}</h3><p>${fmt(s.start)} – ${fmt(s.end)}</p><small style="color:var(--muted)">${s.note}</small></div>`).join("");}
-function icon(s){return ({Volleyball:'🏐','Flag Football':'🏈',Basketball:'🏀',Soccer:'⚽',Esports:'🎮',Chess:'♟️'})[s]||'🏅'}
-function fmt(x){return new Date(x+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+import { db } from "./firebase.js";
+import { seasons as fallbackSeasons,teams as fallbackTeams } from "./seed-data.js";
+import { collection,getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+let seasons=fallbackSeasons,teams=fallbackTeams;
+try{ const [ss,ts]=await Promise.all([getDocs(collection(db,'seasons')),getDocs(collection(db,'teams'))]); if(!ss.empty) seasons=ss.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0)); if(!ts.empty) teams=ts.docs.map(d=>({id:d.id,...d.data()})); }catch(e){ console.warn('Using packaged catalog fallback',e); }
+const seasonGrid=document.getElementById('seasonGrid'); if(seasonGrid) seasonGrid.innerHTML=seasons.map(s=>`<div class="card"><span class="badge badge-gray">${esc(s.status)}</span><h3 style="color:var(--navy);margin:10px 0 4px">${esc(s.name)}</h3><p>${fmt(s.start)} – ${fmt(s.end)}</p><small style="color:var(--muted)">${esc(s.note||'')}</small></div>`).join('');
+const teamGrid=document.getElementById('teamGrid'); if(teamGrid) teamGrid.innerHTML=teams.filter(t=>!['cancelled','complete'].includes(t.status)).map(t=>`<article class="card team-card"><div class="sport">${icon(t.sport)}</div><div class="card-title"><div><h3>${esc(t.name)}</h3><p style="margin:4px 0">${esc(t.grades)} • ${esc(t.gender)}</p></div><span class="badge ${t.league==='IYAC'?'badge-green':t.league==='CAA'?'badge-blue':'badge-gold'}">${esc(t.league)}</span></div><p>${esc(t.placement||'')}</p><span class="badge badge-gray">${esc(t.status||'planned')}</span></article>`).join('');
+function icon(s){return ({Volleyball:'🏐','Flag Football':'🏈',Basketball:'🏀',Soccer:'⚽',Esports:'🎮',Chess:'♟️'})[s]||'🏅'} function fmt(x){return x?new Date(x+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'TBD'}
