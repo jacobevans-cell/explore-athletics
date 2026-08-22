@@ -1,9 +1,50 @@
 import { db } from "./firebase.js";
-import { seasons as fallbackSeasons,teams as fallbackTeams } from "./seed-data.js";
+import { teams as fallbackTeams, programWindows, windowMap } from "./seed-data.js";
 import { collection,getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let seasons=fallbackSeasons,teams=fallbackTeams;
-try{ const [ss,ts]=await Promise.all([getDocs(collection(db,'seasons')),getDocs(collection(db,'teams'))]); if(!ss.empty) seasons=ss.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.order||0)-(b.order||0)); if(!ts.empty) teams=ts.docs.map(d=>({id:d.id,...d.data()})); }catch(e){ console.warn('Using packaged catalog fallback',e); }
-const seasonGrid=document.getElementById('seasonGrid'); if(seasonGrid) seasonGrid.innerHTML=seasons.map(s=>`<div class="card"><span class="badge badge-gray">${esc(s.status)}</span><h3 style="color:var(--navy);margin:10px 0 4px">${esc(s.name)}</h3><p>${fmt(s.start)} – ${fmt(s.end)}</p><small style="color:var(--muted)">${esc(s.note||'')}</small></div>`).join('');
-const teamGrid=document.getElementById('teamGrid'); if(teamGrid) teamGrid.innerHTML=teams.filter(t=>!['cancelled','complete'].includes(t.status)).map(t=>`<article class="card team-card"><div class="sport">${icon(t.sport)}</div><div class="card-title"><div><h3>${esc(t.name)}</h3><p style="margin:4px 0">${esc(t.grades)} • ${esc(t.gender)}</p></div><span class="badge ${t.league==='IYAC'?'badge-green':t.league==='CAA'?'badge-blue':'badge-gold'}">${esc(t.league)}</span></div><p>${esc(t.placement||'')}</p><span class="badge badge-gray">${esc(t.status||'planned')}</span></article>`).join('');
-function icon(s){return ({Volleyball:'🏐','Flag Football':'🏈',Basketball:'🏀',Soccer:'⚽',Esports:'🎮',Chess:'♟️'})[s]||'🏅'} function fmt(x){return x?new Date(x+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'TBD'}
+
+const $=id=>document.getElementById(id);
+let teams=fallbackTeams;
+try{
+  const snap=await getDocs(collection(db,"teams"));
+  if(!snap.empty) teams=snap.docs.map(d=>({id:d.id,...d.data()}));
+}catch(e){ console.warn("Using packaged team catalog.",e); }
+
+renderGroup("elementaryPrograms", teams.filter(t=>t.audience==="Elementary" || t.audience==="All"));
+renderGroup("middlePrograms", teams.filter(t=>t.audience==="Middle School" || t.audience==="All"));
+renderCalendar();
+
+function renderGroup(id,rows){
+  $(id).innerHTML=rows.map(card).join("");
+}
+function card(t){
+  const w=windowMap[t.windowId]||{};
+  const status=String(t.status||"planned");
+  const badge=status==="official"?"Confirmed":status==="active"?"Active":status==="viability"?"Participation Dependent":"Interest";
+  return `<article class="card">
+    <div class="program-topline"><span class="badge badge-blue">${esc(w.label||"Program")}</span><span class="badge ${status==="official"||status==="active"?"badge-green":"badge-gold"}">${badge}</span></div>
+    <h3>${esc(t.displayName||t.name)}</h3>
+    <p><strong>Grades ${esc(t.grades)}</strong>${t.bridgeGrade||t.bridgeEligible?` <small>• Grade 6 may be placed by program needs</small>`:""}</p>
+    <p>${dateRange(t.competitionStart,t.regularSeasonEnd)}</p>
+  </article>`;
+}
+function renderCalendar(){
+  $("calendarRows").innerHTML=programWindows.map(w=>{
+    const rows=teams.filter(t=>t.windowId===w.id);
+    return `<article class="card">
+      <span class="eyebrow">${esc(w.audience.toUpperCase())} • ${esc(w.grades)}</span>
+      <h3>${esc(w.label)}</h3>
+      <p>${dateRange(w.start,w.end)}</p>
+      <div class="checklist">${rows.map(t=>`<div class="check"><div><strong>${esc(t.displayName||t.name)}</strong><small>${esc(t.gender)} • Grades ${esc(t.grades)}</small></div></div>`).join("")}</div>
+    </article>`;
+  }).join("");
+}
+function dateRange(a,b){
+  if(!a&&!b)return "Dates to be announced";
+  return `${fmt(a)} – ${fmt(b)}`;
+}
+function fmt(v){
+  if(!v)return "";
+  const [y,m,d]=v.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US",{month:"short",day:"numeric",year:"numeric"}).format(new Date(y,m-1,d));
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
