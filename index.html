@@ -1,1 +1,95 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#082d5c"><title>Explore Academy Athletics</title><meta name="description" content="Explore Academy Athletics: seasons, teams, athlete registration, and program information."><link rel="stylesheet" href="css/styles.css"></head><body><div class="topbar"><div class="container nav"><a class="brand" href="index.html"><img src="assets/explore-mark.svg" alt="Explore Academy Athletics"><div>Explore Academy Athletics<small>Peoria • Eagles</small></div></a><nav class="nav-links"><a class="desktop" href="index.html#seasons">Seasons</a><a class="desktop" href="index.html#teams">Teams</a><a href="login.html">Athlete Login</a></nav></div></div><main><section class="hero"><div class="container"><span class="eyebrow">Explore Academy • Peoria</span><h1>One home for every Eagle athlete.</h1><p>Explore Academy Athletics brings seasons, teams, registration, schedules, required documents, sports fees, and athlete records into one secure system. IYAC is our first choice for middle-school opportunities; CAA fills the elementary gaps.</p><div class="actions"><a class="btn btn-primary" href="login.html">Athlete / Family Login</a><a class="btn btn-secondary" href="#teams">Explore Teams</a></div></div></section><section id="seasons"><div class="container"><div class="section-head"><div><span class="eyebrow">2026–27</span><h2>Four Explore seasons</h2></div><p>Explore seasons are our operating calendar. Each team still follows its own league dates, so CAA and IYAC can overlap without turning the website into a calendar crime scene.</p></div><div id="seasonGrid" class="grid grid-4"></div></div></section><section id="teams"><div class="container"><div class="section-head"><div><span class="eyebrow">Program Map</span><h2>Teams in one place</h2></div><p>Elementary athletes stay elementary-first whenever possible. Sixth grade is the bridge year. IYAC is favored for older athletes; CAA supplements opportunities IYAC does not provide.</p></div><div id="teamGrid" class="grid grid-3"></div></div></section><section><div class="container grid grid-3"><div class="card"><h2>Secure athlete profiles</h2><p>Families maintain athlete contact information, emergency contacts, grade, and registration status in one account.</p></div><div class="card"><h2>Documents</h2><p>Birth certificates, sports physicals, and supporting documents upload into athlete-specific protected Firebase Storage paths.</p></div><div class="card"><h2>Fees & eligibility</h2><p>Track posted sports fees, payments received, outstanding balances, document review, and team enrollment from the same portal.</p></div></div></section></main><footer><div class="container footer-inner"><span>Explore Academy Athletics • 2026–27</span><span>Secure athlete records powered by Firebase Authentication, Firestore, and Storage.</span></div></footer><script type="module" src="js/public.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a2f63">
+<title>Explore Academy Athletics</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="topbar">
+  <div class="container nav">
+    <a class="brand" href="index.html">
+      <img src="assets/explore-mark.svg" alt="">
+      <div>Explore Academy Athletics<small>PEORIA • EAGLES</small></div>
+    </a>
+    <nav class="nav-links">
+      <a href="#elementary">Grades 4–5</a>
+      <a href="#middle">Grades 6–8</a>
+      <a href="#calendar">Calendar</a>
+      <a href="login.html">Athlete Login</a>
+    </nav>
+  </div>
+</div>
+
+<main>
+<section class="hero">
+  <div class="container">
+    <span class="eyebrow">EXPLORE ACADEMY • PEORIA</span>
+    <h1>More chances to play. One athletics home.</h1>
+    <p>Explore Athletics is organized around two clear pathways: elementary opportunities for grades 4–5 and a middle-school pathway for grades 6–8. Programs are scheduled to maximize how many sports an athlete can play during the school year.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="login.html">Athlete / Family Login</a>
+      <a class="btn btn-secondary" href="#calendar">View Athletics Calendar</a>
+    </div>
+  </div>
+</section>
+
+<section id="elementary">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">GRADES 4–5</span>
+        <h2>Elementary Athletics Pathway</h2>
+        <p>Elementary sports are scheduled in separate windows so athletes can participate in multiple sports whenever team numbers allow.</p>
+      </div>
+    </div>
+    <div id="elementaryPrograms" class="grid grid-3"></div>
+  </div>
+</section>
+
+<section id="middle" style="background:#f4f8fc">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">GRADES 6–8</span>
+        <h2>Middle School Athletics Pathway</h2>
+        <p>Middle school programs use our primary league pathway whenever possible. Fall girls volleyball and coed flag football run concurrently; winter and spring follow cleanly afterward.</p>
+      </div>
+    </div>
+    <div id="middlePrograms" class="grid grid-3"></div>
+  </div>
+</section>
+
+<section id="calendar">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">2026–27</span>
+        <h2>Explore Athletics Calendar</h2>
+        <p>Programs are grouped by the students they serve, not by outside league season numbers.</p>
+      </div>
+    </div>
+    <div id="calendarRows" class="grid grid-2"></div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="notice warning">
+      Team availability depends on participation, staffing, facilities, and final scheduling. Programs marked as interest or viability are not guaranteed until Explore confirms the team.
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="container footer-inner">
+    <span>Explore Academy Athletics • 2026–27</span>
+    <a href="login.html">Athlete / Family Portal</a>
+  </div>
+</footer>
+<script type="module" src="js/public.js"></script>
+</body>
+</html>

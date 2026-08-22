@@ -1,56 +1,32 @@
 rules_version = '2';
-
 service firebase.storage {
   match /b/{bucket}/o {
-
-    function signedIn() {
-      return request.auth != null;
-    }
-
     function verified() {
-      return signedIn()
-        && request.auth.token.email_verified == true;
+      return request.auth != null && request.auth.token.email_verified == true;
     }
-
     function isAdmin() {
-      return verified()
-        && request.auth.token.email == "Jacobicusjax@gmail.com";
+      return verified() && request.auth.token.email == "jacobicusjax@gmail.com";
     }
-
+    function ownsAthlete(athleteId) {
+      return verified()
+        && firestore.get(/databases/(default)/documents/athletes/$(athleteId)).data.familyUid == request.auth.uid;
+    }
     function validDocumentType(docType) {
       return docType == "birth-certificate"
         || docType == "physical"
         || docType == "insurance";
     }
-
     function validUpload() {
       return request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches(
-          'application/pdf|image/jpeg|image/png|image/webp'
-        );
+        && request.resource.contentType.matches('application/pdf|image/jpeg|image/png|image/webp');
     }
 
-    match /athlete-documents/{uid}/{docType}/{fileName} {
-
-      // Only approved document categories may exist.
-      allow read: if validDocumentType(docType)
-        && verified()
-        && (request.auth.uid == uid || isAdmin());
-
-      // Athletes/families may upload only to their own folder.
-      allow create: if validDocumentType(docType)
-        && verified()
-        && request.auth.uid == uid
-        && validUpload();
-
-      // Only the administrator may replace or delete sensitive files.
-      allow update, delete: if validDocumentType(docType)
-        && isAdmin();
+    match /athlete-documents/{athleteId}/{docType}/{fileName} {
+      allow read: if validDocumentType(docType) && (isAdmin() || ownsAthlete(athleteId));
+      allow create: if validDocumentType(docType) && ownsAthlete(athleteId) && validUpload();
+      allow update, delete: if validDocumentType(docType) && isAdmin();
     }
 
-    // Deny everything else in Storage.
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
+    match /{allPaths=**} { allow read, write: if false; }
   }
 }

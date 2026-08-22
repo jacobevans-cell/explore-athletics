@@ -4,61 +4,87 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function verified() { return signedIn() && request.auth.token.email_verified == true; }
     function isAdmin() {
-      return verified()
-        && request.auth.token.email == "Jacobicusjax@gmail.com";
+      return verified() && request.auth.token.email == "jacobicusjax@gmail.com";
     }
-    function isOwner(uid) { return verified() && request.auth.uid == uid; }
+    function athleteOwned(athleteId) {
+      return verified()
+        && get(/databases/$(database)/documents/athletes/$(athleteId)).data.familyUid == request.auth.uid;
+    }
 
-    // Public, non-sensitive catalog data.
-    match /seasons/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /teams/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /seasons/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
-    // Account directory. Users may create/read their own basic directory record.
+    match /teams/{teamId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      match /roster/{athleteId} { allow read, write: if isAdmin(); }
+      match /events/{eventId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+      match /announcements/{announcementId} {
+        allow read: if verified();
+        allow write: if isAdmin();
+      }
+    }
+
     match /users/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
-      allow create: if isOwner(uid)
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.email == request.auth.token.email
-        && ((isAdmin() && request.resource.data.role == 'admin') || (!isAdmin() && request.resource.data.role == 'athlete'));
-      allow update: if isAdmin() || (isOwner(uid)
+      allow read: if verified() && (request.auth.uid == uid || isAdmin());
+      allow create: if verified() && request.auth.uid == uid;
+      allow update: if isAdmin() || (verified() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','lastLoginAt']));
       allow delete: if isAdmin();
     }
 
-    // One athlete profile per authenticated account.
-    match /athletes/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
-      allow create, update: if isOwner(uid) || isAdmin();
+    match /athletes/{athleteId} {
+      allow read: if isAdmin() || (verified() && resource.data.familyUid == request.auth.uid);
+
+      allow create: if isAdmin() || (verified()
+        && request.resource.data.familyUid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email);
+
+      allow update: if isAdmin() || (verified()
+        && resource.data.familyUid == request.auth.uid
+        && request.resource.data.familyUid == resource.data.familyUid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'firstName','lastName','dob','grade','gender','phone',
+          'guardianName','guardianEmail','guardianPhone',
+          'emergencyName','emergencyPhone','shirtSize',
+          'medicalNotes','email','updatedAt'
+        ]));
+
       allow delete: if isAdmin();
 
       match /registrations/{registrationId} {
-        allow read: if isOwner(uid) || isAdmin();
-        allow create: if isAdmin() || (isOwner(uid)
-          && request.resource.data.status == 'submitted'
-          && request.resource.data.athleteUid == uid);
-        allow update: if isAdmin() || (isOwner(uid)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes','updatedAt']));
-        allow delete: if isAdmin();
+        allow read: if isAdmin() || athleteOwned(athleteId);
+        allow create: if isAdmin() || (athleteOwned(athleteId)
+          && request.resource.data.athleteId == athleteId
+          && request.resource.data.familyUid == request.auth.uid
+          && request.resource.data.status == 'submitted');
+        allow update, delete: if isAdmin();
       }
 
-      // Document metadata. File bytes are separately protected by Storage rules.
       match /documents/{documentId} {
-        allow read: if isOwner(uid) || isAdmin();
-        allow create: if isAdmin() || (isOwner(uid)
+        allow read: if isAdmin() || athleteOwned(athleteId);
+        allow create: if isAdmin() || (athleteOwned(athleteId)
           && request.resource.data.reviewStatus == 'pending'
-          && request.resource.data.storagePath.matches('athlete-documents/' + uid + '/.*'));
-        allow update: if isAdmin();
-        allow delete: if isAdmin();
+          && request.resource.data.storagePath.matches('athlete-documents/' + athleteId + '/.*'));
+        allow update, delete: if isAdmin();
       }
 
-      // Athlete may see their ledger; only admin may create/change money records.
       match /payments/{paymentId} {
-        allow read: if isOwner(uid) || isAdmin();
+        allow read: if isAdmin() || athleteOwned(athleteId);
         allow create, update, delete: if isAdmin();
       }
     }
 
-    // Optional old interest data remains admin-only after migration.
+    match /athleticsSettings/{id} {
+      allow read: if verified();
+      allow write: if isAdmin();
+    }
+
     match /season2SportsInterest/{id} { allow read, write: if isAdmin(); }
     match /sportsRoster/{id} { allow read, write: if isAdmin(); }
 
